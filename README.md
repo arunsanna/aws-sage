@@ -2,8 +2,6 @@
 
 A [Model Context Protocol (MCP)](https://www.anthropic.com/news/model-context-protocol) server that enables AI assistants like Claude to interact with your AWS environment. This allows for natural language querying and management of your AWS resources during conversations. Think of it as a better Amazon Q alternative.
 
-![AWS MCP](./images/aws-mcp-demo.png)
-
 ## Features
 
 - 🔍 Query and modify AWS resources using natural language
@@ -60,8 +58,6 @@ Note: Replace `python` with the path to your Python executable if needed.
 
 1. Open Claude desktop app and go to Settings -> Developer -> Edit Config
 
-![Claude Settings](./images/desktop_settings.png)
-
 2. Add the following entry to your `claude_desktop_config.json`:
 
 ```json
@@ -78,9 +74,7 @@ Note: Replace `python` with the path to your Python executable if needed.
 Important: Replace `/path/to/your/python` with the result of `which python` from your terminal.
 Important: Replace `/path/to/your/aws-mcp/run_aws_mcp.py` with the actual path to the run_aws_mcp.py file.
 
-3. Restart Claude desktop app. You should see this:
-
-![Claude MCP Connection Status](./images/verify_installation.png)
+3. Restart Claude desktop app. You should see this no errors:
 
 4. Start by selecting an AWS profile or jump to action by asking:
    - "List available AWS profiles"
@@ -103,6 +97,14 @@ tail -n 50 -f ~/Library/Logs/Claude/mcp.log
 
 - [ ] MFA support
 - [ ] Cache SSO credentials to prevent from refreshing them too eagerly
+
+## Contact
+
+For questions, suggestions, or discussions about AWS MCP, please:
+- Open an issue on GitHub
+- Email: arun.sanna@outlook.com
+
+Check out [CONTRIBUTING.md](./CONTRIBUTING.md) for information on how to contribute to this project.
 
 ## AWS Integration
 
@@ -143,5 +145,3 @@ The parser can dynamically recognize and work with all AWS services available th
 - Organizations
 - GuardDuty
 - ...and many more!
-
-<a href="https://glama.ai/mcp/servers/ta7kdy57us"><img width="380" height="200" src="https://glama.ai/mcp/servers/ta7kdy57us/badge" alt="aws-mcp MCP server" /></a>
