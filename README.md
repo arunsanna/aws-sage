@@ -4,11 +4,14 @@ A [Model Context Protocol (MCP)](https://www.anthropic.com/news/model-context-pr
 
 ## Features
 
-- 🔍 Query and modify AWS resources using natural language
-- ☁️ Support for multiple AWS profiles and SSO authentication
-- 🌐 Multi-region support
-- 🔐 Secure credential handling (no credentials are exposed to external services, your local credentials are used)
-- 🏃‍♂️ Local execution with your AWS credentials
+- Query and modify AWS resources using natural language
+- Support for multiple AWS profiles
+- Multi-region support
+- Local execution with your AWS credentials
+
+## Workflow
+
+![MCP Workflow](docs/MCP-Workflow.png)
 
 ## Prerequisites
 
