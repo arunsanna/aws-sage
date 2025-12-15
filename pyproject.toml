@@ -1,0 +1,97 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "aws-mcp-pro"
+version = "1.0.0"
+description = "Production-grade AWS MCP server with safety controls and cross-service intelligence"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.11"
+authors = [
+    { name = "Arun Sanna" }
+]
+keywords = ["aws", "mcp", "claude", "ai", "infrastructure"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+dependencies = [
+    "fastmcp>=2.0.0",
+    "boto3>=1.35.0",
+    "botocore>=1.35.0",
+    "pydantic>=2.0.0",
+    "structlog>=24.0.0",
+    "rich>=13.0.0",
+    "tabulate>=0.9.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "pytest-cov>=4.0.0",
+    "moto[all]>=5.0.0",
+    "ruff>=0.1.0",
+    "mypy>=1.8.0",
+    "boto3-stubs[essential]>=1.35.0",
+]
+
+[project.scripts]
+aws-mcp = "aws_mcp.server:main"
+
+[project.urls]
+Homepage = "https://github.com/arunsanna/aws-mcp-pro"
+Documentation = "https://github.com/arunsanna/aws-mcp-pro#readme"
+Repository = "https://github.com/arunsanna/aws-mcp-pro"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/aws_mcp"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "UP",  # pyupgrade
+]
+ignore = [
+    "E501",  # line too long (handled by formatter)
+    "B008",  # do not perform function calls in argument defaults
+]
+
+[tool.ruff.isort]
+known-first-party = ["aws_mcp"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_return_any = true
+warn_unused_ignores = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+addopts = "-v --cov=aws_mcp --cov-report=term-missing"
+
+[tool.coverage.run]
+source = ["src/aws_mcp"]
+branch = true
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise NotImplementedError",
+    "if TYPE_CHECKING:",
+]
