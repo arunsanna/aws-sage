@@ -188,7 +188,7 @@ def make_response(
 # === Core Tools ===
 
 
-@mcp.tool("list_profiles", "List all available AWS profiles")
+@mcp.tool("list_profiles", description="List all available AWS profiles")
 async def list_profiles() -> str:
     """List all AWS profiles configured on the system."""
     try:
@@ -213,7 +213,7 @@ async def list_profiles() -> str:
         return make_response("error", message=str(e))
 
 
-@mcp.tool("select_profile", "Select an AWS profile to use for operations")
+@mcp.tool("select_profile", description="Select an AWS profile to use for operations")
 async def select_profile(profile: str, region: str | None = None) -> str:
     """Select an AWS profile and validate credentials."""
     try:
@@ -237,7 +237,7 @@ async def select_profile(profile: str, region: str | None = None) -> str:
         return make_response("error", message=str(e))
 
 
-@mcp.tool("get_account_info", "Get current AWS account and session information")
+@mcp.tool("get_account_info", description="Get current AWS account and session information")
 async def get_account_info() -> str:
     """Get information about the current AWS session."""
     try:
@@ -268,7 +268,7 @@ async def get_account_info() -> str:
         return make_response("error", message=str(e))
 
 
-@mcp.tool("set_safety_mode", "Change the safety mode for operations")
+@mcp.tool("set_safety_mode", description="Change the safety mode for operations")
 async def set_safety_mode(mode: str) -> str:
     """Change the safety mode.
 
@@ -301,7 +301,7 @@ async def set_safety_mode(mode: str) -> str:
 # === Query Tools ===
 
 
-@mcp.tool("aws_query", "Execute read-only AWS queries (natural language supported)")
+@mcp.tool("aws_query", description="Execute read-only AWS queries (natural language supported)")
 async def aws_query(
     query: str,
     service: str | None = None,
@@ -327,7 +327,7 @@ async def aws_query(
         return make_response("error", message=str(e), query=query)
 
 
-@mcp.tool("aws_execute", "Execute AWS operations (requires appropriate safety mode)")
+@mcp.tool("aws_execute", description="Execute AWS operations (requires appropriate safety mode)")
 async def aws_execute(
     service: str,
     operation: str,
@@ -360,7 +360,7 @@ async def aws_execute(
         return make_response("error", message=str(e))
 
 
-@mcp.tool("validate_operation", "Check if an operation is valid and allowed without executing")
+@mcp.tool("validate_operation", description="Check if an operation is valid and allowed without executing")
 async def validate_operation(
     service: str,
     operation: str,
@@ -396,14 +396,14 @@ async def validate_operation(
 # === Context Tools ===
 
 
-@mcp.tool("get_context", "Get current conversation context (recent resources, aliases)")
+@mcp.tool("get_context", description="Get current conversation context (recent resources, aliases)")
 async def get_context_tool() -> str:
     """Get the current conversation context."""
     context = get_context()
     return make_response("success", data=context.get_summary())
 
 
-@mcp.tool("set_alias", "Create a shortcut alias for a resource")
+@mcp.tool("set_alias", description="Create a shortcut alias for a resource")
 async def set_alias(name: str, value: str) -> str:
     """Set an alias for quick reference.
 
@@ -418,7 +418,7 @@ async def set_alias(name: str, value: str) -> str:
     )
 
 
-@mcp.tool("list_aliases", "List all defined aliases")
+@mcp.tool("list_aliases", description="List all defined aliases")
 async def list_aliases() -> str:
     """List all defined aliases."""
     context = get_context()
@@ -440,7 +440,7 @@ async def list_aliases() -> str:
 # === Discovery Tools ===
 
 
-@mcp.tool("discover_resources", "Find resources across services by tags")
+@mcp.tool("discover_resources", description="Find resources across services by tags")
 async def discover_resources(
     tags: dict[str, str],
     services: list[str] | None = None,
@@ -525,7 +525,7 @@ async def discover_resources(
 # === Documentation & Knowledge Tools ===
 
 
-@mcp.tool("search_docs", "Search AWS documentation for a service or topic")
+@mcp.tool("search_docs", description="Search AWS documentation for a service or topic")
 async def search_docs(
     query: str,
     service: str | None = None,
@@ -562,7 +562,7 @@ async def search_docs(
         return make_response("error", message=str(e))
 
 
-@mcp.tool("get_aws_knowledge", "Get AWS best practices and operational knowledge")
+@mcp.tool("get_aws_knowledge", description="Get AWS best practices and operational knowledge")
 async def get_aws_knowledge(
     question: str,
     service: str | None = None,
@@ -608,7 +608,7 @@ async def get_aws_knowledge(
         return make_response("error", message=str(e))
 
 
-@mcp.tool("get_best_practices", "Get best practices for an AWS service")
+@mcp.tool("get_best_practices", description="Get best practices for an AWS service")
 async def get_best_practices(service: str) -> str:
     """Get best practices for a specific AWS service.
 
@@ -639,7 +639,7 @@ async def get_best_practices(service: str) -> str:
         return make_response("error", message=str(e))
 
 
-@mcp.tool("get_service_limits", "Get service quotas and limits for an AWS service")
+@mcp.tool("get_service_limits", description="Get service quotas and limits for an AWS service")
 async def get_service_limits(service: str) -> str:
     """Get service limits and quotas for a specific AWS service.
 
@@ -673,7 +673,7 @@ async def get_service_limits(service: str) -> str:
 # === Differentiator Tools ===
 
 
-@mcp.tool("map_dependencies", "Map resource dependencies and relationships")
+@mcp.tool("map_dependencies", description="Map resource dependencies and relationships")
 async def map_dependencies(
     resource_arn: str,
     max_depth: int = 2,
@@ -704,7 +704,7 @@ async def map_dependencies(
         return make_response("error", message=str(e))
 
 
-@mcp.tool("impact_analysis", "Analyze the impact of modifying or deleting a resource")
+@mcp.tool("impact_analysis", description="Analyze the impact of modifying or deleting a resource")
 async def impact_analysis(
     resource_arn: str,
     region: str | None = None,
@@ -733,7 +733,7 @@ async def impact_analysis(
         return make_response("error", message=str(e))
 
 
-@mcp.tool("investigate_incident", "Run automated incident investigation workflow")
+@mcp.tool("investigate_incident", description="Run automated incident investigation workflow")
 async def investigate_incident(
     incident_type: str,
     resource: str,
