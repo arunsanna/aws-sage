@@ -12,10 +12,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Copy project files
 COPY pyproject.toml .
+COPY README.md .
 COPY src/ src/
 
-# Install the package
-RUN pip install --no-cache-dir -e .
+# Install the package (non-editable for container)
+RUN pip install --no-cache-dir .
 
 # Switch to non-root user
 USER appuser
