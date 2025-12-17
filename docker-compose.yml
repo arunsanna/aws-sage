@@ -1,0 +1,44 @@
+services:
+  aws-mcp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: aws-mcp-pro:latest
+    container_name: aws-mcp-pro
+    volumes:
+      # Mount AWS credentials read-only for security
+      - ~/.aws:/home/appuser/.aws:ro
+    environment:
+      - AWS_PROFILE=${AWS_PROFILE:-default}
+      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION:-us-east-1}
+      - AWS_MCP_SAFETY_MODE=${AWS_MCP_SAFETY_MODE:-read_only}
+    stdin_open: true
+    tty: true
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+    # Health check
+    healthcheck:
+      test: ["CMD", "python", "-c", "import aws_mcp"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # LocalStack for local development
+  localstack:
+    image: localstack/localstack:latest
+    container_name: aws-mcp-localstack
+    ports:
+      - "4566:4566"
+    environment:
+      - SERVICES=s3,dynamodb,lambda,sqs,sns,iam,sts,cloudwatch,logs,secretsmanager,kms
+      - DEBUG=0
+      - PERSISTENCE=1
+    volumes:
+      - localstack-data:/var/lib/localstack
+
+volumes:
+  localstack-data:

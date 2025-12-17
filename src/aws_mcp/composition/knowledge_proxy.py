@@ -7,9 +7,14 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
 
+import httpx
 import structlog
 
 logger = structlog.get_logger()
+
+# AWS documentation endpoints
+AWS_DOCS_BASE_URL = "https://docs.aws.amazon.com"
+AWS_KNOWLEDGE_MCP_URL = "https://knowledge-mcp.global.api.aws"
 
 
 class KnowledgeCategory(Enum):
@@ -23,6 +28,15 @@ class KnowledgeCategory(Enum):
     TROUBLESHOOTING = "troubleshooting"
 
 
+class KnowledgeSource(Enum):
+    """Source of knowledge."""
+
+    BUILTIN = "builtin"
+    AWS_DOCS = "aws_docs"
+    AWS_KNOWLEDGE_MCP = "aws_knowledge_mcp"
+    WEB_SEARCH = "web_search"
+
+
 @dataclass
 class KnowledgeItem:
     """An item of AWS knowledge."""
@@ -32,6 +46,8 @@ class KnowledgeItem:
     category: KnowledgeCategory
     service: str | None = None
     source: str | None = None
+    source_type: KnowledgeSource = KnowledgeSource.BUILTIN
+    source_url: str | None = None
     confidence: float = 1.0
     related_services: list[str] = field(default_factory=list)
 
@@ -43,8 +59,32 @@ class KnowledgeItem:
             "category": self.category.value,
             "service": self.service,
             "source": self.source,
+            "source_type": self.source_type.value,
+            "source_url": self.source_url,
             "confidence": self.confidence,
             "related_services": self.related_services,
+        }
+
+
+@dataclass
+class LiveQueryResult:
+    """Result from live knowledge query."""
+
+    success: bool
+    items: list[KnowledgeItem] = field(default_factory=list)
+    source: KnowledgeSource = KnowledgeSource.BUILTIN
+    error: str | None = None
+    fallback_used: bool = False
+
+    def to_dict(self) -> dict[str, Any]:
+        """Convert to dictionary."""
+        return {
+            "success": self.success,
+            "items": [item.to_dict() for item in self.items],
+            "source": self.source.value,
+            "error": self.error,
+            "fallback_used": self.fallback_used,
+            "items_count": len(self.items),
         }
 
 
@@ -305,6 +345,228 @@ class AWSKnowledgeProxy:
             service=service,
             category=KnowledgeCategory.LIMITS,
         )
+
+    async def query_live(
+        self,
+        question: str,
+        service: str | None = None,
+        timeout: float = 10.0,
+    ) -> LiveQueryResult:
+        """
+        Query AWS knowledge with live fetch from AWS documentation.
+
+        This method attempts to fetch live information from AWS documentation
+        or the AWS Knowledge MCP server, falling back to built-in knowledge
+        if external sources are unavailable.
+
+        Args:
+            question: The question to ask
+            service: Optional service to scope the query
+            timeout: HTTP request timeout in seconds
+
+        Returns:
+            LiveQueryResult with items from live or fallback sources
+        """
+        logger.info("querying_knowledge_live", question=question, service=service)
+
+        # Try AWS Knowledge MCP server first (if configured)
+        if self.mcp_server_url:
+            try:
+                result = await self._query_aws_knowledge_mcp(question, service, timeout)
+                if result.success and result.items:
+                    return result
+            except Exception as e:
+                logger.warning("aws_knowledge_mcp_failed", error=str(e))
+
+        # Try AWS documentation search
+        try:
+            result = await self._query_aws_docs(question, service, timeout)
+            if result.success and result.items:
+                return result
+        except Exception as e:
+            logger.warning("aws_docs_query_failed", error=str(e))
+
+        # Fallback to built-in knowledge
+        builtin_items = self._search_builtin_knowledge(question, service, None)
+        return LiveQueryResult(
+            success=True,
+            items=builtin_items,
+            source=KnowledgeSource.BUILTIN,
+            fallback_used=True,
+        )
+
+    async def _query_aws_knowledge_mcp(
+        self,
+        question: str,
+        service: str | None,
+        timeout: float,
+    ) -> LiveQueryResult:
+        """Query the AWS Knowledge MCP server."""
+        if not self.mcp_server_url:
+            return LiveQueryResult(
+                success=False,
+                error="AWS Knowledge MCP URL not configured",
+            )
+
+        try:
+            async with httpx.AsyncClient(timeout=timeout) as client:
+                response = await client.post(
+                    f"{self.mcp_server_url}/tools/call",
+                    json={
+                        "name": "aws___search_documentation",
+                        "arguments": {
+                            "query": question,
+                            "service": service,
+                        },
+                    },
+                )
+
+                if response.status_code == 200:
+                    data = response.json()
+                    items = self._parse_mcp_response(data, service)
+                    return LiveQueryResult(
+                        success=True,
+                        items=items,
+                        source=KnowledgeSource.AWS_KNOWLEDGE_MCP,
+                    )
+                else:
+                    return LiveQueryResult(
+                        success=False,
+                        error=f"MCP server returned status {response.status_code}",
+                    )
+
+        except httpx.TimeoutException:
+            return LiveQueryResult(
+                success=False,
+                error="Request timed out",
+            )
+        except Exception as e:
+            return LiveQueryResult(
+                success=False,
+                error=str(e),
+            )
+
+    async def _query_aws_docs(
+        self,
+        question: str,
+        service: str | None,
+        timeout: float,
+    ) -> LiveQueryResult:
+        """Query AWS documentation (simplified approach using service-specific docs)."""
+        # AWS documentation doesn't have a public search API, so we provide
+        # guidance based on known documentation URLs
+        items: list[KnowledgeItem] = []
+
+        # Map services to their documentation URLs
+        SERVICE_DOCS: dict[str, dict[str, str]] = {
+            "s3": {
+                "url": f"{AWS_DOCS_BASE_URL}/AmazonS3/latest/userguide/",
+                "title": "Amazon S3 User Guide",
+            },
+            "ec2": {
+                "url": f"{AWS_DOCS_BASE_URL}/AWSEC2/latest/UserGuide/",
+                "title": "Amazon EC2 User Guide",
+            },
+            "lambda": {
+                "url": f"{AWS_DOCS_BASE_URL}/lambda/latest/dg/",
+                "title": "AWS Lambda Developer Guide",
+            },
+            "iam": {
+                "url": f"{AWS_DOCS_BASE_URL}/IAM/latest/UserGuide/",
+                "title": "IAM User Guide",
+            },
+            "rds": {
+                "url": f"{AWS_DOCS_BASE_URL}/AmazonRDS/latest/UserGuide/",
+                "title": "Amazon RDS User Guide",
+            },
+            "dynamodb": {
+                "url": f"{AWS_DOCS_BASE_URL}/amazondynamodb/latest/developerguide/",
+                "title": "DynamoDB Developer Guide",
+            },
+            "cloudformation": {
+                "url": f"{AWS_DOCS_BASE_URL}/AWSCloudFormation/latest/UserGuide/",
+                "title": "AWS CloudFormation User Guide",
+            },
+            "ecs": {
+                "url": f"{AWS_DOCS_BASE_URL}/AmazonECS/latest/developerguide/",
+                "title": "Amazon ECS Developer Guide",
+            },
+            "eks": {
+                "url": f"{AWS_DOCS_BASE_URL}/eks/latest/userguide/",
+                "title": "Amazon EKS User Guide",
+            },
+            "sns": {
+                "url": f"{AWS_DOCS_BASE_URL}/sns/latest/dg/",
+                "title": "Amazon SNS Developer Guide",
+            },
+            "sqs": {
+                "url": f"{AWS_DOCS_BASE_URL}/AWSSimpleQueueService/latest/SQSDeveloperGuide/",
+                "title": "Amazon SQS Developer Guide",
+            },
+        }
+
+        if service and service.lower() in SERVICE_DOCS:
+            doc_info = SERVICE_DOCS[service.lower()]
+            items.append(
+                KnowledgeItem(
+                    title=f"{doc_info['title']}",
+                    content=f"For detailed information about {service.upper()}, "
+                    f"refer to the official AWS documentation.",
+                    category=KnowledgeCategory.BEST_PRACTICES,
+                    service=service,
+                    source="AWS Documentation",
+                    source_type=KnowledgeSource.AWS_DOCS,
+                    source_url=doc_info["url"],
+                    confidence=1.0,
+                )
+            )
+
+        # Add AWS Well-Architected reference
+        items.append(
+            KnowledgeItem(
+                title="AWS Well-Architected Framework",
+                content="The AWS Well-Architected Framework provides best practices "
+                "and guidance for building secure, high-performing, resilient, "
+                "and efficient infrastructure.",
+                category=KnowledgeCategory.ARCHITECTURE,
+                source="AWS Documentation",
+                source_type=KnowledgeSource.AWS_DOCS,
+                source_url=f"{AWS_DOCS_BASE_URL}/wellarchitected/latest/framework/",
+                confidence=1.0,
+            )
+        )
+
+        return LiveQueryResult(
+            success=True,
+            items=items,
+            source=KnowledgeSource.AWS_DOCS,
+        )
+
+    def _parse_mcp_response(
+        self, data: dict[str, Any], service: str | None
+    ) -> list[KnowledgeItem]:
+        """Parse response from AWS Knowledge MCP server."""
+        items: list[KnowledgeItem] = []
+
+        # Parse the MCP response format
+        results = data.get("results", data.get("content", []))
+        if isinstance(results, list):
+            for result in results[:5]:  # Limit to 5 items
+                if isinstance(result, dict):
+                    items.append(
+                        KnowledgeItem(
+                            title=result.get("title", "AWS Documentation"),
+                            content=result.get("content", result.get("text", "")),
+                            category=KnowledgeCategory.BEST_PRACTICES,
+                            service=service,
+                            source="AWS Knowledge MCP",
+                            source_type=KnowledgeSource.AWS_KNOWLEDGE_MCP,
+                            source_url=result.get("url"),
+                            confidence=result.get("confidence", 0.9),
+                        )
+                    )
+
+        return items
 
 
 # Global proxy instance

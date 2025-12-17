@@ -14,6 +14,20 @@ from botocore.exceptions import ClientError, NoCredentialsError, ProfileNotFound
 from aws_mcp.config import get_config
 from aws_mcp.core.exceptions import AuthenticationError
 
+# Import lazily to avoid circular imports
+_environment_manager = None
+
+
+def _get_env_manager():
+    """Get environment manager lazily."""
+    global _environment_manager
+    if _environment_manager is None:
+        from aws_mcp.core.environment_manager import get_environment_manager
+
+        _environment_manager = get_environment_manager
+    return _environment_manager()
+
+
 logger = structlog.get_logger()
 
 
@@ -175,13 +189,39 @@ class SessionManager:
         return self._session
 
     def get_client(self, service: str, region: str | None = None) -> Any:
-        """Get a boto3 client for a service."""
+        """Get a boto3 client for a service.
+
+        Automatically routes to LocalStack if that environment is active.
+        """
         session = self.get_session()
+        env_manager = _get_env_manager()
+
+        # Get environment-specific kwargs (endpoint_url for LocalStack, etc.)
+        env_kwargs = env_manager.get_client_kwargs(service, region or self.active_region)
+
+        # For LocalStack, use the environment kwargs directly
+        if env_manager.is_localstack():
+            return session.client(service, **env_kwargs)
+
+        # For production, just use region
         return session.client(service, region_name=region or self.active_region)
 
     def get_resource(self, service: str, region: str | None = None) -> Any:
-        """Get a boto3 resource for a service."""
+        """Get a boto3 resource for a service.
+
+        Automatically routes to LocalStack if that environment is active.
+        """
         session = self.get_session()
+        env_manager = _get_env_manager()
+
+        # Get environment-specific kwargs (endpoint_url for LocalStack, etc.)
+        env_kwargs = env_manager.get_client_kwargs(service, region or self.active_region)
+
+        # For LocalStack, use the environment kwargs directly
+        if env_manager.is_localstack():
+            return session.resource(service, **env_kwargs)
+
+        # For production, just use region
         return session.resource(service, region_name=region or self.active_region)
 
     def get_account_info(self) -> AccountInfo | None:

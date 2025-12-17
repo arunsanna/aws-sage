@@ -5,6 +5,8 @@ from aws_mcp.composition.knowledge_proxy import (
     AWSKnowledgeProxy,
     KnowledgeCategory,
     KnowledgeItem,
+    KnowledgeSource,
+    LiveQueryResult,
     get_knowledge_proxy,
 )
 
@@ -15,5 +17,7 @@ __all__ = [
     "AWSKnowledgeProxy",
     "KnowledgeCategory",
     "KnowledgeItem",
+    "KnowledgeSource",
+    "LiveQueryResult",
     "get_knowledge_proxy",
 ]

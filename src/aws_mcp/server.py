@@ -21,11 +21,19 @@ from aws_mcp.core.exceptions import (
     SafetyError,
 )
 from aws_mcp.core.session import get_session_manager
+from aws_mcp.core.environment_manager import get_environment_manager
+from aws_mcp.core.multi_account import get_multi_account_manager
 from aws_mcp.execution import get_execution_engine
 from aws_mcp.safety.classifier import OperationClassifier
 from aws_mcp.safety.validator import get_safety_enforcer
 from aws_mcp.composition import get_docs_proxy, get_knowledge_proxy, KnowledgeCategory
-from aws_mcp.differentiators import get_dependency_mapper, get_incident_investigator, IncidentType
+from aws_mcp.differentiators import (
+    get_cost_analyzer,
+    get_dependency_mapper,
+    get_environment_comparer,
+    get_incident_investigator,
+    IncidentType,
+)
 
 # Configure structured logging
 structlog.configure(
@@ -789,6 +797,500 @@ async def investigate_incident(
             incident_type=incident_type,
             resource=resource,
         )
+        return make_response("error", message=str(e))
+
+
+# === Cost Analysis Tools ===
+
+
+@mcp.tool("find_idle_resources", description="Find potentially idle or underutilized AWS resources")
+async def find_idle_resources(
+    services: list[str] | None = None,
+    region: str | None = None,
+    lookback_days: int = 14,
+) -> str:
+    """Find idle resources that may be candidates for termination.
+
+    Checks for:
+    - EC2 instances with low CPU utilization (<5% avg)
+    - Stopped EC2 instances
+    - RDS instances with zero connections
+    - Unattached EBS volumes
+    - Unused Elastic IPs
+
+    Examples:
+    - find_idle_resources()
+    - find_idle_resources(services=["ec2", "ebs"])
+    - find_idle_resources(lookback_days=30)
+    """
+    try:
+        analyzer = get_cost_analyzer()
+        result = await analyzer.find_idle_resources(services, region, lookback_days)
+
+        return make_response(
+            "success",
+            data=result.to_dict(),
+            idle_count=len(result.idle_resources),
+            potential_savings=f"${result.total_potential_savings:.2f}/month",
+        )
+    except Exception as e:
+        logger.error("find_idle_resources_failed", error=str(e))
+        return make_response("error", message=str(e))
+
+
+@mcp.tool("get_rightsizing_recommendations", description="Get recommendations for right-sizing EC2 and RDS instances")
+async def get_rightsizing_recommendations(
+    services: list[str] | None = None,
+    region: str | None = None,
+    lookback_days: int = 14,
+) -> str:
+    """Get right-sizing recommendations based on utilization metrics.
+
+    Analyzes CloudWatch metrics to recommend:
+    - Downsizing over-provisioned instances
+    - Upsizing under-provisioned instances
+    - Modernizing to newer instance families
+
+    Examples:
+    - get_rightsizing_recommendations()
+    - get_rightsizing_recommendations(services=["ec2"], lookback_days=30)
+    """
+    try:
+        analyzer = get_cost_analyzer()
+        result = await analyzer.get_rightsizing_recommendations(services, region, lookback_days)
+
+        return make_response(
+            "success",
+            data=result.to_dict(),
+            recommendation_count=len(result.recommendations),
+            potential_savings=f"${result.total_potential_savings:.2f}/month",
+        )
+    except Exception as e:
+        logger.error("get_rightsizing_recommendations_failed", error=str(e))
+        return make_response("error", message=str(e))
+
+
+@mcp.tool("get_cost_breakdown", description="Get cost breakdown by service or tag")
+async def get_cost_breakdown(
+    group_by: str = "SERVICE",
+    tag_key: str | None = None,
+    days: int = 30,
+) -> str:
+    """Get AWS cost breakdown grouped by service or tag.
+
+    Requires Cost Explorer to be enabled in the AWS account.
+
+    Args:
+        group_by: How to group costs - SERVICE, TAG, or USAGE_TYPE
+        tag_key: Tag key to group by (required if group_by=TAG)
+        days: Number of days to analyze (default: 30)
+
+    Examples:
+    - get_cost_breakdown()
+    - get_cost_breakdown(group_by="TAG", tag_key="Environment")
+    - get_cost_breakdown(days=90)
+    """
+    try:
+        analyzer = get_cost_analyzer()
+        result = await analyzer.get_cost_breakdown(
+            granularity="MONTHLY",
+            group_by=group_by,
+            tag_key=tag_key,
+            days=days,
+        )
+
+        if result.breakdown:
+            return make_response(
+                "success",
+                data=result.to_dict(),
+                total_cost=f"${result.breakdown.total_cost:.2f}",
+                period=f"{result.breakdown.period_start.date()} to {result.breakdown.period_end.date()}",
+            )
+        else:
+            return make_response(
+                "error",
+                message="Failed to retrieve cost breakdown",
+                errors=result.errors,
+            )
+    except Exception as e:
+        logger.error("get_cost_breakdown_failed", error=str(e))
+        return make_response("error", message=str(e))
+
+
+@mcp.tool("project_costs", description="Estimate costs for proposed AWS resources")
+async def project_costs(
+    resources: list[dict[str, Any]],
+    region: str | None = None,
+) -> str:
+    """Estimate monthly costs for proposed resources before deployment.
+
+    Supports EC2, RDS, EBS, and Lambda pricing estimates.
+
+    Args:
+        resources: List of resource configurations
+        region: AWS region for pricing
+
+    Resource config examples:
+    - {"type": "ec2", "instance_type": "t3.large", "count": 2}
+    - {"type": "rds", "instance_class": "db.t3.medium", "engine": "mysql"}
+    - {"type": "ebs", "size_gb": 100, "volume_type": "gp3"}
+    - {"type": "lambda", "memory_mb": 256, "monthly_invocations": 1000000, "avg_duration_ms": 200}
+
+    Examples:
+    - project_costs(resources=[{"type": "ec2", "instance_type": "m5.large"}])
+    - project_costs(resources=[
+        {"type": "ec2", "instance_type": "t3.medium", "count": 3},
+        {"type": "rds", "instance_class": "db.m5.large"},
+        {"type": "ebs", "size_gb": 500, "volume_type": "gp3"}
+      ])
+    """
+    try:
+        analyzer = get_cost_analyzer()
+        result = await analyzer.project_costs(resources, region)
+
+        if result.projection:
+            return make_response(
+                "success",
+                data=result.to_dict(),
+                total_monthly=f"${result.projection.total_monthly:.2f}",
+                total_yearly=f"${result.projection.total_yearly:.2f}",
+            )
+        else:
+            return make_response(
+                "error",
+                message="Failed to project costs",
+                errors=result.errors,
+            )
+    except Exception as e:
+        logger.error("project_costs_failed", error=str(e))
+        return make_response("error", message=str(e))
+
+
+# === Environment Management Tools ===
+
+
+@mcp.tool(
+    "list_environments",
+    description="List all configured AWS environments (production, localstack)",
+)
+async def list_environments() -> str:
+    """List all available AWS environments.
+
+    Returns configured environments including production AWS and LocalStack.
+    Shows which environment is currently active.
+
+    Examples:
+    - list_environments()
+    """
+    try:
+        env_manager = get_environment_manager()
+        environments = env_manager.list_environments()
+
+        return make_response(
+            "success",
+            environments=[env.to_dict() for env in environments],
+            active=env_manager.get_active_environment().name,
+        )
+    except Exception as e:
+        logger.error("list_environments_failed", error=str(e))
+        return make_response("error", message=str(e))
+
+
+@mcp.tool(
+    "switch_environment",
+    description="Switch between AWS environments (production or localstack)",
+)
+async def switch_environment(
+    environment: str,
+    validate: bool = True,
+) -> str:
+    """Switch to a different AWS environment.
+
+    Args:
+        environment: Environment name ('production' or 'localstack')
+        validate: Whether to validate connectivity before switching
+
+    Examples:
+    - switch_environment(environment="localstack")
+    - switch_environment(environment="production")
+    - switch_environment(environment="localstack", validate=False)
+
+    IMPORTANT: Switching to production will affect real AWS resources!
+    """
+    try:
+        env_manager = get_environment_manager()
+        result = env_manager.switch_environment(environment, validate=validate)
+
+        if result.success:
+            return make_response(
+                "success",
+                message=result.message,
+                environment=result.environment.to_dict() if result.environment else None,
+                warnings=result.warnings,
+            )
+        else:
+            return make_response(
+                "error",
+                message=result.message,
+                warnings=result.warnings,
+            )
+    except Exception as e:
+        logger.error("switch_environment_failed", error=str(e))
+        return make_response("error", message=str(e))
+
+
+@mcp.tool(
+    "get_environment_info",
+    description="Get detailed information about the current AWS environment",
+)
+async def get_environment_info() -> str:
+    """Get information about the currently active environment.
+
+    Returns details including environment type, region, connectivity status,
+    and available services (for LocalStack).
+
+    Examples:
+    - get_environment_info()
+    """
+    try:
+        env_manager = get_environment_manager()
+        info = env_manager.get_environment_info()
+
+        return make_response(
+            "success",
+            **info,
+        )
+    except Exception as e:
+        logger.error("get_environment_info_failed", error=str(e))
+        return make_response("error", message=str(e))
+
+
+@mcp.tool(
+    "check_localstack",
+    description="Check LocalStack connectivity and available services",
+)
+async def check_localstack() -> str:
+    """Check if LocalStack is running and accessible.
+
+    Returns LocalStack status, endpoint URL, and lists of community
+    and pro services.
+
+    Examples:
+    - check_localstack()
+    """
+    try:
+        env_manager = get_environment_manager()
+        status = env_manager.check_localstack()
+
+        return make_response(
+            "success" if status["available"] else "info",
+            **status,
+        )
+    except Exception as e:
+        logger.error("check_localstack_failed", error=str(e))
+        return make_response("error", message=str(e))
+
+
+@mcp.tool(
+    "compare_environments",
+    description="Compare resources between two AWS environments (e.g., localstack vs production)",
+)
+async def compare_environments(
+    service: str,
+    source: str = "localstack",
+    target: str = "production",
+) -> str:
+    """Compare resources between two environments.
+
+    Useful for validating that LocalStack has the same resources as production,
+    or for identifying drift between environments.
+
+    Args:
+        service: AWS service to compare (s3, dynamodb, lambda, sqs, sns)
+        source: Source environment name (default: localstack)
+        target: Target environment name (default: production)
+
+    Examples:
+    - compare_environments(service="s3")
+    - compare_environments(service="dynamodb", source="localstack", target="production")
+    - compare_environments(service="lambda")
+    """
+    try:
+        env_manager = get_environment_manager()
+        comparer = get_environment_comparer()
+
+        source_env = env_manager.get_environment(source)
+        target_env = env_manager.get_environment(target)
+
+        if not source_env:
+            return make_response(
+                "error",
+                message=f"Source environment '{source}' not found",
+            )
+        if not target_env:
+            return make_response(
+                "error",
+                message=f"Target environment '{target}' not found",
+            )
+
+        result = await comparer.compare_environments(service, source_env, target_env)
+
+        if result.errors:
+            return make_response(
+                "warning",
+                data=result.to_dict(),
+                message="Comparison completed with errors",
+            )
+
+        return make_response(
+            "success",
+            data=result.to_dict(),
+            summary={
+                "only_in_source": len(result.only_in_source),
+                "only_in_target": len(result.only_in_target),
+                "different": len(result.different),
+                "identical": len(result.identical),
+            },
+        )
+    except Exception as e:
+        logger.error("compare_environments_failed", error=str(e))
+        return make_response("error", message=str(e))
+
+
+# === Multi-Account Management Tools ===
+
+
+@mcp.tool(
+    "assume_role",
+    description="Assume an IAM role in another AWS account for cross-account access",
+)
+async def assume_role(
+    role_arn: str,
+    session_name: str | None = None,
+    duration_seconds: int = 3600,
+    external_id: str | None = None,
+    alias: str | None = None,
+) -> str:
+    """Assume an IAM role in another AWS account.
+
+    Enables cross-account access by assuming a role. The role must have a trust
+    policy allowing the current account/role to assume it.
+
+    Args:
+        role_arn: ARN of the role to assume (e.g., arn:aws:iam::123456789012:role/MyRole)
+        session_name: Optional session name (auto-generated if not provided)
+        duration_seconds: Credential validity duration (default: 3600 = 1 hour)
+        external_id: External ID for cross-account access (if required by trust policy)
+        alias: Optional friendly name for this account
+
+    Examples:
+    - assume_role(role_arn="arn:aws:iam::123456789012:role/CrossAccountRole")
+    - assume_role(role_arn="arn:aws:iam::123456789012:role/Role", alias="production")
+    - assume_role(
+        role_arn="arn:aws:iam::123456789012:role/Role",
+        external_id="my-external-id",
+        duration_seconds=7200
+      )
+    """
+    try:
+        manager = get_multi_account_manager()
+        result = manager.assume_role(
+            role_arn=role_arn,
+            session_name=session_name,
+            duration_seconds=duration_seconds,
+            external_id=external_id,
+            alias=alias,
+        )
+
+        if result.success:
+            return make_response(
+                "success",
+                message=result.message,
+                account=result.account.to_dict() if result.account else None,
+                warnings=result.warnings,
+            )
+        else:
+            return make_response(
+                "error",
+                message=result.message,
+                warnings=result.warnings,
+            )
+    except Exception as e:
+        logger.error("assume_role_failed", error=str(e))
+        return make_response("error", message=str(e))
+
+
+@mcp.tool(
+    "list_accounts",
+    description="List all configured AWS accounts (including assumed roles)",
+)
+async def list_accounts() -> str:
+    """List all configured AWS accounts.
+
+    Shows all accounts that have been added via assume_role or detected
+    from the current credentials. Indicates which account is currently active.
+
+    Examples:
+    - list_accounts()
+    """
+    try:
+        manager = get_multi_account_manager()
+        accounts = manager.list_accounts()
+
+        active = manager.get_active_account()
+        active_id = active.account_id if active else None
+
+        return make_response(
+            "success",
+            accounts=[acc.to_dict() for acc in accounts],
+            active_account=active_id,
+            total_accounts=len(accounts),
+        )
+    except Exception as e:
+        logger.error("list_accounts_failed", error=str(e))
+        return make_response("error", message=str(e))
+
+
+@mcp.tool(
+    "switch_account",
+    description="Switch the active AWS account context",
+)
+async def switch_account(
+    account: str,
+) -> str:
+    """Switch to a different AWS account context.
+
+    Changes the active account for subsequent operations. Use the account ID
+    or the alias assigned during assume_role.
+
+    Args:
+        account: Account ID or alias to switch to
+
+    Examples:
+    - switch_account(account="123456789012")
+    - switch_account(account="production")
+    - switch_account(account="default")
+
+    IMPORTANT: Operations after switching will affect resources in the new account!
+    """
+    try:
+        manager = get_multi_account_manager()
+        result = manager.switch_account(account)
+
+        if result.success:
+            return make_response(
+                "success",
+                message=result.message,
+                account=result.account.to_dict() if result.account else None,
+                warnings=result.warnings,
+            )
+        else:
+            return make_response(
+                "error",
+                message=result.message,
+            )
+    except Exception as e:
+        logger.error("switch_account_failed", error=str(e))
         return make_response("error", message=str(e))
 
 

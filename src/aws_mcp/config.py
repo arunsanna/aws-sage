@@ -39,6 +39,23 @@ class SafetyConfig:
 
 
 @dataclass
+class LocalStackConfig:
+    """Configuration for LocalStack integration."""
+
+    enabled: bool = False
+    host: str = "localhost"
+    port: int = 4566
+    auto_detect: bool = True
+    use_ssl: bool = False
+
+    @property
+    def endpoint_url(self) -> str:
+        """Get the LocalStack endpoint URL."""
+        protocol = "https" if self.use_ssl else "http"
+        return f"{protocol}://{self.host}:{self.port}"
+
+
+@dataclass
 class ServerConfig:
     """Main server configuration."""
 
@@ -47,6 +64,9 @@ class ServerConfig:
 
     # Safety
     safety: SafetyConfig = field(default_factory=SafetyConfig)
+
+    # LocalStack
+    localstack: LocalStackConfig = field(default_factory=LocalStackConfig)
 
     # Performance
     pagination_max_pages: int = 100
@@ -73,6 +93,13 @@ class ServerConfig:
                 mode=safety_mode,
                 dry_run_when_available=os.environ.get("AWS_MCP_DRY_RUN", "true").lower() == "true",
                 audit_logging=os.environ.get("AWS_MCP_AUDIT_LOG", "true").lower() == "true",
+            ),
+            localstack=LocalStackConfig(
+                enabled=os.environ.get("AWS_MCP_LOCALSTACK_ENABLED", "false").lower() == "true",
+                host=os.environ.get("AWS_MCP_LOCALSTACK_HOST", "localhost"),
+                port=int(os.environ.get("AWS_MCP_LOCALSTACK_PORT", "4566")),
+                auto_detect=os.environ.get("AWS_MCP_LOCALSTACK_AUTO_DETECT", "true").lower()
+                == "true",
             ),
         )
 
