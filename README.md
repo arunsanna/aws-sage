@@ -9,14 +9,17 @@ AWS Labs offers [15 separate MCP servers](https://github.com/awslabs/mcp) for di
 | Feature | AWS Labs MCP | AWS MCP Pro |
 |---------|--------------|-------------|
 | **Architecture** | 15 separate servers | 1 unified server |
-| **Tools** | ~45 tools across servers | 18 intelligent tools |
+| **Tools** | ~45 tools across servers | **30 intelligent tools** |
 | **Cross-Service Queries** | No | Yes - discover resources across all services |
 | **Dependency Mapping** | No | Yes - "what depends on this resource?" |
 | **Impact Analysis** | No | Yes - "what breaks if I delete this?" |
 | **Incident Investigation** | No | Yes - automated troubleshooting workflows |
+| **Cost Analysis** | Separate server | **Built-in** - idle resources, rightsizing, projections |
+| **LocalStack Support** | No | **Yes** - seamless local development |
+| **Multi-Account** | No | **Yes** - cross-account via AssumeRole |
+| **Docker Support** | Separate | **Built-in** with docker-compose |
 | **Safety System** | Basic | 3-tier with 70+ blocked operations |
 | **Natural Language** | Limited | Full NLP with intent classification |
-| **Validation** | Runtime errors | Pre-execution validation via botocore |
 
 ## Features
 
@@ -74,6 +77,28 @@ Automated troubleshooting workflows:
 "Analyze this security alert"
 ```
 
+#### Cost Analysis
+Find savings and optimize spending:
+```
+"Find idle resources in my account"
+"Get rightsizing recommendations for EC2"
+"Project costs for 3 t3.large instances"
+```
+
+#### LocalStack Integration
+Develop locally without touching production:
+```
+"Switch to LocalStack environment"
+"Compare S3 buckets between localstack and production"
+```
+
+#### Multi-Account Support
+Work across AWS accounts:
+```
+"Assume role in account 123456789012"
+"Switch to production account"
+```
+
 ## Installation
 
 ### Prerequisites
@@ -84,8 +109,8 @@ Automated troubleshooting workflows:
 ### Install from Source
 
 ```bash
-git clone https://github.com/arunsanna/aws-sage
-cd aws-sage
+git clone https://github.com/arunsanna/aws-mcp-pro
+cd aws-mcp-pro
 pip install -e .
 ```
 
@@ -107,17 +132,44 @@ Add to `claude_desktop_config.json`:
 }
 ```
 
-**Find your Python path:**
-```bash
-which python3
+### Docker Installation (Recommended)
+
+For enhanced security with container isolation:
+
+```json
+{
+  "mcpServers": {
+    "aws-mcp": {
+      "command": "docker",
+      "args": [
+        "run", "-i", "--rm",
+        "-v", "~/.aws:/home/appuser/.aws:ro",
+        "-e", "AWS_PROFILE=default",
+        "aws-mcp-pro:latest"
+      ]
+    }
+  }
+}
 ```
 
-**Config file locations:**
-- macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
-- Windows: `%APPDATA%\Claude\claude_desktop_config.json`
-- Linux: `~/.config/Claude/claude_desktop_config.json`
+Build the Docker image:
+```bash
+docker compose build aws-mcp
+```
 
-## Tools Reference
+### LocalStack Development
+
+Start LocalStack for local development:
+```bash
+docker compose up -d localstack
+```
+
+Then switch to LocalStack in your Claude conversation:
+```
+"Switch to localstack environment"
+```
+
+## Tools Reference (30 Tools)
 
 ### Credential Management
 
@@ -172,6 +224,33 @@ which python3
 | `get_best_practices` | Get service-specific best practices |
 | `get_service_limits` | Show default service quotas |
 
+### Cost Analysis (NEW)
+
+| Tool | Description |
+|------|-------------|
+| `find_idle_resources` | Find unused EC2/RDS/EBS/EIP resources |
+| `get_rightsizing_recommendations` | Get EC2 right-sizing suggestions |
+| `get_cost_breakdown` | Spending analysis by service/tag |
+| `project_costs` | Estimate costs before deployment |
+
+### Environment Management (NEW)
+
+| Tool | Description |
+|------|-------------|
+| `list_environments` | List configured environments (production/localstack) |
+| `switch_environment` | Switch between LocalStack and production |
+| `get_environment_info` | Current environment details |
+| `check_localstack` | Verify LocalStack connectivity |
+| `compare_environments` | Diff resources between environments |
+
+### Multi-Account Management (NEW)
+
+| Tool | Description |
+|------|-------------|
+| `assume_role` | Assume role in another account via STS |
+| `list_accounts` | Show configured accounts |
+| `switch_account` | Change active account context |
+
 ## Usage Examples
 
 ### Basic Queries
@@ -181,6 +260,32 @@ which python3
 "Show EC2 instances in us-west-2"
 "Describe Lambda function payment-processor"
 "Get IAM users with console access"
+```
+
+### Cost Analysis
+
+```
+"Find idle resources in us-east-1"
+"Get rightsizing recommendations for EC2"
+"Show cost breakdown by service for last 30 days"
+"Project costs for 2 t3.large and 100GB gp3 EBS"
+```
+
+### LocalStack Development
+
+```
+"Switch to localstack"
+"Create an S3 bucket in localstack"
+"Compare DynamoDB tables between localstack and production"
+"Check localstack connectivity"
+```
+
+### Multi-Account Operations
+
+```
+"Assume role arn:aws:iam::123456789012:role/AdminRole"
+"List all configured accounts"
+"Switch to production account"
 ```
 
 ### Cross-Service Discovery
@@ -215,25 +320,23 @@ which python3
 "Analyze security alert for instance i-abc123"
 ```
 
-### Safety Mode Management
-
-```
-"Switch to standard mode to make changes"
-"Enable unrestricted mode for maintenance"
-"Return to read-only mode"
-```
-
 ## Architecture
 
 ```
 aws-mcp/
+├── Dockerfile                  # Container support
+├── docker-compose.yml          # LocalStack + MCP server
+│
 ├── src/aws_mcp/
-│   ├── server.py              # FastMCP server (18 tools)
+│   ├── server.py              # FastMCP server (30 tools)
 │   ├── config.py              # Configuration & safety modes
 │   │
 │   ├── core/
 │   │   ├── session.py         # AWS session management
 │   │   ├── context.py         # Conversation memory
+│   │   ├── environment.py     # Environment configuration
+│   │   ├── environment_manager.py  # LocalStack/production switching
+│   │   ├── multi_account.py   # Cross-account management
 │   │   └── exceptions.py      # Custom exceptions
 │   │
 │   ├── safety/
@@ -249,20 +352,19 @@ aws-mcp/
 │   │   ├── engine.py          # Execution orchestrator
 │   │   └── pagination.py      # Auto-pagination
 │   │
-│   ├── services/
-│   │   └── registry.py        # Service plugin system
-│   │
 │   ├── composition/
 │   │   ├── docs_proxy.py      # AWS documentation
-│   │   └── knowledge_proxy.py # AWS knowledge base
+│   │   └── knowledge_proxy.py # AWS knowledge base + live query
 │   │
 │   └── differentiators/
 │       ├── discovery.py       # Cross-service discovery
 │       ├── dependencies.py    # Dependency mapping
-│       └── workflows.py       # Incident investigation
+│       ├── workflows.py       # Incident investigation
+│       ├── cost.py            # Cost analysis
+│       └── compare.py         # Environment comparison
 │
 └── tests/
-    ├── unit/                  # Unit tests (83 tests)
+    ├── unit/                  # Unit tests (145 tests)
     └── integration/           # Integration tests
 ```
 
@@ -271,8 +373,8 @@ aws-mcp/
 ### Setup
 
 ```bash
-git clone https://github.com/arunsanna/aws-sage
-cd aws-sage
+git clone https://github.com/arunsanna/aws-mcp-pro
+cd aws-mcp-pro
 pip install -e ".[dev]"
 ```
 
@@ -286,7 +388,8 @@ pytest
 pytest --cov=aws_mcp
 
 # Specific module
-pytest tests/unit/test_safety.py -v
+pytest tests/unit/test_cost.py -v
+pytest tests/unit/test_environment.py -v
 ```
 
 ### Run Server Locally
@@ -298,6 +401,29 @@ fastmcp dev src/aws_mcp/server.py
 # Or directly
 python -m aws_mcp.server
 ```
+
+### Docker Development
+
+```bash
+# Build and run
+docker compose build aws-mcp
+docker compose up aws-mcp
+
+# With LocalStack
+docker compose up -d localstack
+docker compose up aws-mcp
+```
+
+## Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `AWS_PROFILE` | AWS profile to use | `default` |
+| `AWS_DEFAULT_REGION` | Default AWS region | `us-east-1` |
+| `AWS_MCP_SAFETY_MODE` | Safety mode (read_only/standard/unrestricted) | `read_only` |
+| `AWS_MCP_LOCALSTACK_ENABLED` | Enable LocalStack by default | `false` |
+| `AWS_MCP_LOCALSTACK_HOST` | LocalStack host | `localhost` |
+| `AWS_MCP_LOCALSTACK_PORT` | LocalStack port | `4566` |
 
 ## Troubleshooting
 
@@ -325,13 +451,20 @@ tail -f ~/Library/Logs/Claude/mcp.log
 - Check spelling of service/operation names
 - Use `validate_operation` to test before executing
 
+**"LocalStack not reachable"**
+- Ensure LocalStack is running: `docker compose up -d localstack`
+- Check endpoint: `curl http://localhost:4566/_localstack/health`
+- Use `check_localstack` tool to diagnose
+
 ## Roadmap
 
-- [ ] LocalStack integration for local development
-- [ ] Cost optimization analyzer
+- [x] LocalStack integration for local development
+- [x] Cost optimization analyzer
+- [x] Multi-account support
+- [x] Docker containerization
 - [ ] CloudFormation drift detection
-- [ ] Multi-account support
 - [ ] Custom workflow definitions
+- [ ] Terraform state integration
 
 ## Contributing
 
@@ -343,5 +476,5 @@ MIT License - see [LICENSE](./LICENSE) for details.
 
 ## Contact
 
-- GitHub Issues: [arunsanna/aws-sage](https://github.com/arunsanna/aws-sage/issues)
+- GitHub Issues: [arunsanna/aws-mcp-pro](https://github.com/arunsanna/aws-mcp-pro/issues)
 - Email: arun.sanna@outlook.com
