@@ -2,8 +2,6 @@
 
 **Making cloud infrastructure management as simple as having a conversation**
 
-*By Arun Sanna | December 2025*
-
 > **Open Source**: [github.com/arunsanna/aws-sage](https://github.com/arunsanna/aws-sage)
 
 ---
@@ -306,10 +304,5 @@ The goal isn't to replace infrastructure expertise. It's to amplify it. Experien
 
 - **Repository**: [github.com/arunsanna/aws-sage](https://github.com/arunsanna/aws-sage)
 - **License**: MIT (free for any use)
-- **Author**: Arun Sanna (arun.sanna@outlook.com)
 
 AWS Sage is open source. Contributions, feedback, and questions are welcome.
-
----
-
-*AWS Sage v1.0.0 | December 2025*
