@@ -154,27 +154,27 @@ pip install .
 pip install git+https://github.com/arunsanna/aws-sage.git
 ```
 
-### Configure Claude Desktop
+## Client Configuration
 
-**Config file location by OS:**
+First, find your Python path:
+```bash
+which python  # or: which python3
+```
+
+### Claude Desktop
+
+**Config file location:**
 | OS | Path |
 |----|------|
 | macOS | `~/Library/Application Support/Claude/claude_desktop_config.json` |
 | Windows | `%APPDATA%\Claude\claude_desktop_config.json` |
 | Linux | `~/.config/Claude/claude_desktop_config.json` |
 
-**Find your Python path:**
-```bash
-which python  # or: which python3
-```
-
-Add to your config file:
-
 ```json
 {
   "mcpServers": {
     "aws-sage": {
-      "command": "/usr/bin/python3",
+      "command": "/path/to/python3",
       "args": ["-m", "aws_sage.server"],
       "env": {
         "AWS_PROFILE": "default"
@@ -184,52 +184,173 @@ Add to your config file:
 }
 ```
 
-> **Note**: Replace `/usr/bin/python3` with your actual Python path from the command above.
+### Claude Code
 
-### Docker Installation (Recommended for Production)
+**Option 1: CLI command**
+```bash
+claude mcp add aws-sage -s user -- python -m aws_sage.server
+```
+
+**Option 2: Project config** (`.mcp.json` in project root)
+```json
+{
+  "mcpServers": {
+    "aws-sage": {
+      "command": "python",
+      "args": ["-m", "aws_sage.server"],
+      "env": {
+        "AWS_PROFILE": "default"
+      }
+    }
+  }
+}
+```
+
+**Option 3: Global config** (`~/.claude.json`)
+```json
+{
+  "mcpServers": {
+    "aws-sage": {
+      "command": "python",
+      "args": ["-m", "aws_sage.server"],
+      "env": {
+        "AWS_PROFILE": "default"
+      }
+    }
+  }
+}
+```
+
+### Cursor
+
+**Config file:** `~/.cursor/mcp.json` (global) or `.cursor/mcp.json` (project)
+
+```json
+{
+  "mcpServers": {
+    "aws-sage": {
+      "command": "python",
+      "args": ["-m", "aws_sage.server"],
+      "env": {
+        "AWS_PROFILE": "default"
+      }
+    }
+  }
+}
+```
+
+### Cline (VS Code Extension)
+
+**Config file:** Access via Cline settings → "Configure MCP Servers" → `cline_mcp_settings.json`
+
+```json
+{
+  "mcpServers": {
+    "aws-sage": {
+      "command": "python",
+      "args": ["-m", "aws_sage.server"],
+      "env": {
+        "AWS_PROFILE": "default"
+      },
+      "disabled": false
+    }
+  }
+}
+```
+
+### Windsurf
+
+**Config file:**
+| OS | Path |
+|----|------|
+| macOS | `~/.codeium/windsurf/mcp_config.json` |
+| Windows | `%USERPROFILE%\.codeium\windsurf\mcp_config.json` |
+
+```json
+{
+  "mcpServers": {
+    "aws-sage": {
+      "command": "python",
+      "args": ["-m", "aws_sage.server"],
+      "env": {
+        "AWS_PROFILE": "default"
+      }
+    }
+  }
+}
+```
+
+### Zed
+
+**Config file:** Zed Settings (`settings.json`)
+
+```json
+{
+  "context_servers": {
+    "aws-sage": {
+      "command": "python",
+      "args": ["-m", "aws_sage.server"],
+      "env": {
+        "AWS_PROFILE": "default"
+      }
+    }
+  }
+}
+```
+
+### VS Code (Native MCP)
+
+**Config file:** `.vscode/mcp.json` (project)
+
+```json
+{
+  "servers": {
+    "aws-sage": {
+      "command": "python",
+      "args": ["-m", "aws_sage.server"],
+      "env": {
+        "AWS_PROFILE": "default"
+      }
+    }
+  }
+}
+```
+
+### Docker Installation (All Clients)
 
 For enhanced security with container isolation:
 
-**Step 1: Build the image**
 ```bash
 git clone https://github.com/arunsanna/aws-sage
 cd aws-sage
 docker compose build aws-sage
 ```
 
-**Step 2: Add to Claude Desktop config**
+**Docker config (use in any client above):**
 
 macOS/Linux:
 ```json
 {
-  "mcpServers": {
-    "aws-sage": {
-      "command": "docker",
-      "args": [
-        "run", "-i", "--rm",
-        "-v", "${HOME}/.aws:/home/appuser/.aws:ro",
-        "-e", "AWS_PROFILE=default",
-        "aws-sage:latest"
-      ]
-    }
-  }
+  "command": "docker",
+  "args": [
+    "run", "-i", "--rm",
+    "-v", "${HOME}/.aws:/home/appuser/.aws:ro",
+    "-e", "AWS_PROFILE=default",
+    "aws-sage:latest"
+  ]
 }
 ```
 
 Windows:
 ```json
 {
-  "mcpServers": {
-    "aws-sage": {
-      "command": "docker",
-      "args": [
-        "run", "-i", "--rm",
-        "-v", "%USERPROFILE%\\.aws:/home/appuser/.aws:ro",
-        "-e", "AWS_PROFILE=default",
-        "aws-sage:latest"
-      ]
-    }
-  }
+  "command": "docker",
+  "args": [
+    "run", "-i", "--rm",
+    "-v", "%USERPROFILE%\\.aws:/home/appuser/.aws:ro",
+    "-e", "AWS_PROFILE=default",
+    "aws-sage:latest"
+  ]
 }
 ```
 
