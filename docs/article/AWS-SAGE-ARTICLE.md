@@ -298,7 +298,21 @@ Cross-account operations include:
 
 ### 9.3 Installation
 
-**Docker (Recommended)**:
+**From Source**:
+```bash
+git clone https://github.com/arunsanna/aws-sage
+cd aws-sage
+pip install -e .
+```
+
+**Docker (Recommended for Production)**:
+```bash
+# Build the image
+docker compose build aws-sage
+```
+
+Then add to Claude Desktop config (`~/Library/Application Support/Claude/claude_desktop_config.json` on macOS):
+
 ```json
 {
   "mcpServers": {
@@ -306,18 +320,13 @@ Cross-account operations include:
       "command": "docker",
       "args": [
         "run", "-i", "--rm",
-        "-v", "~/.aws:/home/appuser/.aws:ro",
+        "-v", "${HOME}/.aws:/home/appuser/.aws:ro",
         "-e", "AWS_PROFILE=default",
         "aws-sage:latest"
       ]
     }
   }
 }
-```
-
-**Direct Installation**:
-```bash
-pip install aws-sage
 ```
 
 ---

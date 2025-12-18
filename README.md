@@ -99,14 +99,27 @@ Work across AWS accounts:
 "Switch to production account"
 ```
 
+## Quick Start
+
+```bash
+# 1. Clone and install
+git clone https://github.com/arunsanna/aws-sage
+cd aws-sage
+pip install -e .
+
+# 2. Add to Claude Desktop config (see location below)
+# 3. Restart Claude Desktop
+# 4. Start chatting: "List my S3 buckets"
+```
+
 ## Installation
 
 ### Prerequisites
 - Python 3.11+
-- AWS credentials configured (`~/.aws/`)
-- [Claude Desktop](https://claude.ai/download) or Claude Code
+- AWS credentials configured (`~/.aws/credentials` or `~/.aws/config`)
+- [Claude Desktop](https://claude.ai/download) or [Claude Code](https://docs.anthropic.com/en/docs/claude-code)
 
-### Install from Source
+### Option 1: Install from Source (Recommended)
 
 ```bash
 git clone https://github.com/arunsanna/aws-sage
@@ -114,15 +127,33 @@ cd aws-sage
 pip install -e .
 ```
 
+### Option 2: Install from GitHub
+
+```bash
+pip install git+https://github.com/arunsanna/aws-sage.git
+```
+
 ### Configure Claude Desktop
 
-Add to `claude_desktop_config.json`:
+**Config file location by OS:**
+| OS | Path |
+|----|------|
+| macOS | `~/Library/Application Support/Claude/claude_desktop_config.json` |
+| Windows | `%APPDATA%\Claude\claude_desktop_config.json` |
+| Linux | `~/.config/Claude/claude_desktop_config.json` |
+
+**Find your Python path:**
+```bash
+which python  # or: which python3
+```
+
+Add to your config file:
 
 ```json
 {
   "mcpServers": {
     "aws-sage": {
-      "command": "/path/to/python",
+      "command": "/usr/bin/python3",
       "args": ["-m", "aws_sage.server"],
       "env": {
         "AWS_PROFILE": "default"
@@ -132,10 +163,22 @@ Add to `claude_desktop_config.json`:
 }
 ```
 
-### Docker Installation (Recommended)
+> **Note**: Replace `/usr/bin/python3` with your actual Python path from the command above.
+
+### Docker Installation (Recommended for Production)
 
 For enhanced security with container isolation:
 
+**Step 1: Build the image**
+```bash
+git clone https://github.com/arunsanna/aws-sage
+cd aws-sage
+docker compose build aws-sage
+```
+
+**Step 2: Add to Claude Desktop config**
+
+macOS/Linux:
 ```json
 {
   "mcpServers": {
@@ -143,7 +186,7 @@ For enhanced security with container isolation:
       "command": "docker",
       "args": [
         "run", "-i", "--rm",
-        "-v", "~/.aws:/home/appuser/.aws:ro",
+        "-v", "${HOME}/.aws:/home/appuser/.aws:ro",
         "-e", "AWS_PROFILE=default",
         "aws-sage:latest"
       ]
@@ -152,9 +195,21 @@ For enhanced security with container isolation:
 }
 ```
 
-Build the Docker image:
-```bash
-docker compose build aws-sage
+Windows:
+```json
+{
+  "mcpServers": {
+    "aws-sage": {
+      "command": "docker",
+      "args": [
+        "run", "-i", "--rm",
+        "-v", "%USERPROFILE%\\.aws:/home/appuser/.aws:ro",
+        "-e", "AWS_PROFILE=default",
+        "aws-sage:latest"
+      ]
+    }
+  }
+}
 ```
 
 ### LocalStack Development
