@@ -5,9 +5,21 @@
 [![Python](https://img.shields.io/badge/python-3.11+-yellow.svg)](https://python.org)
 [![Tests](https://img.shields.io/badge/tests-145%20passing-brightgreen.svg)](tests/)
 
-A production-grade [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server for AWS. Connect Claude Desktop to your AWS infrastructure and manage it through natural conversation.
+A production-grade [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server for AWS. Connect AI assistants to your AWS infrastructure and manage it through natural conversation.
 
-**🚀 Works with Claude Desktop out of the box** - just install and configure.
+**🚀 Works with any MCP-compatible client** - just install and configure.
+
+### Compatible Clients
+
+| Client | Status | Notes |
+|--------|--------|-------|
+| [Claude Desktop](https://claude.ai/download) | ✅ Full Support | Recommended |
+| [Claude Code](https://docs.anthropic.com/en/docs/claude-code) | ✅ Full Support | CLI & IDE |
+| [Cursor](https://cursor.sh) | ✅ Full Support | MCP enabled |
+| [Cline](https://github.com/cline/cline) | ✅ Full Support | VS Code extension |
+| [Windsurf](https://codeium.com/windsurf) | ✅ Full Support | MCP enabled |
+| [Zed](https://zed.dev) | ✅ Full Support | MCP enabled |
+| VS Code + Copilot | ⏳ Planned | Via MCP extension |
 
 ## Why AWS Sage?
 
@@ -126,7 +138,7 @@ That's it! Claude Desktop automatically runs AWS Sage when needed.
 ### Prerequisites
 - Python 3.11+
 - AWS credentials configured (`~/.aws/credentials` or `~/.aws/config`)
-- [Claude Desktop](https://claude.ai/download) or [Claude Code](https://docs.anthropic.com/en/docs/claude-code)
+- Any MCP-compatible client (see [Compatible Clients](#compatible-clients) above)
 
 ### Option 1: From Source
 
@@ -519,6 +531,14 @@ tail -f ~/Library/Logs/Claude/mcp.log
 - [ ] Terraform state integration
 - [ ] Compliance scanning (CIS benchmarks)
 
+## References
+
+- [Model Context Protocol Specification](https://modelcontextprotocol.io) - Anthropic, 2024
+- [MCP Ecosystem](https://github.com/modelcontextprotocol) - 5,800+ servers, 97M monthly SDK downloads (2025)
+- [AWS Labs MCP Servers](https://github.com/awslabs/mcp) - Official AWS MCP implementations
+- [FastMCP Framework](https://github.com/jlowin/fastmcp) - Python MCP SDK
+- [LocalStack](https://localstack.cloud) - Local AWS cloud emulator
+
 ## Contributing
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines.
@@ -531,3 +551,4 @@ MIT License - see [LICENSE](./LICENSE) for details.
 
 - GitHub Issues: [arunsanna/aws-sage](https://github.com/arunsanna/aws-sage/issues)
 - Email: arun.sanna@outlook.com
+- Website: [arunsanna.com](https://arunsanna.com)
