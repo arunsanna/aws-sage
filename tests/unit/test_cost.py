@@ -4,7 +4,7 @@ import pytest
 from unittest.mock import MagicMock, patch, AsyncMock
 from datetime import datetime
 
-from aws_mcp.differentiators.cost import (
+from aws_sage.differentiators.cost import (
     CostAnalyzer,
     CostAnalysisResult,
     IdleResource,

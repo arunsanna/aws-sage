@@ -2,9 +2,9 @@
 
 import pytest
 
-from aws_mcp.config import OperationCategory
-from aws_mcp.parser.intent import IntentClassifier, fuzzy_match, get_intent_classifier
-from aws_mcp.parser.service_models import ServiceModelRegistry, get_service_registry
+from aws_sage.config import OperationCategory
+from aws_sage.parser.intent import IntentClassifier, fuzzy_match, get_intent_classifier
+from aws_sage.parser.service_models import ServiceModelRegistry, get_service_registry
 
 
 class TestIntentClassifier:

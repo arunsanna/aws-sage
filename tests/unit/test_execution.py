@@ -5,15 +5,15 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from botocore.exceptions import ClientError
 
-from aws_mcp.config import OperationCategory, SafetyMode
-from aws_mcp.core.session import SessionManager
-from aws_mcp.execution.engine import (
+from aws_sage.config import OperationCategory, SafetyMode
+from aws_sage.core.session import SessionManager
+from aws_sage.execution.engine import (
     ExecutionEngine,
     ExecutionResult,
     get_execution_engine,
     reset_execution_engine,
 )
-from aws_mcp.parser.schemas import StructuredCommand
+from aws_sage.parser.schemas import StructuredCommand
 
 
 class TestExecutionResult:

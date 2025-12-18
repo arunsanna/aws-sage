@@ -2,16 +2,16 @@
 
 import pytest
 
-from aws_mcp.config import OperationCategory, SafetyMode
-from aws_mcp.core.exceptions import OperationBlockedError, SafetyError
-from aws_mcp.safety.classifier import OperationClassifier
-from aws_mcp.safety.denylist import (
+from aws_sage.config import OperationCategory, SafetyMode
+from aws_sage.core.exceptions import OperationBlockedError, SafetyError
+from aws_sage.safety.classifier import OperationClassifier
+from aws_sage.safety.denylist import (
     DENYLIST,
     get_block_reason,
     is_operation_blocked,
     requires_double_confirmation,
 )
-from aws_mcp.safety.validator import SafetyDecision, SafetyEnforcer
+from aws_sage.safety.validator import SafetyDecision, SafetyEnforcer
 
 
 class TestOperationClassifier:

@@ -23,7 +23,7 @@ USER appuser
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
-ENV AWS_MCP_LOG_LEVEL=INFO
+ENV AWS_SAGE_LOG_LEVEL=INFO
 
 # Entry point for MCP server (stdio transport)
-ENTRYPOINT ["python", "-m", "aws_mcp.server"]
+ENTRYPOINT ["python", "-m", "aws_sage.server"]

@@ -7,11 +7,11 @@ import boto3
 import pytest
 from moto import mock_aws
 
-from aws_mcp.config import SafetyConfig, SafetyMode, ServerConfig, reset_config, set_config
-from aws_mcp.core.context import ConversationContext, reset_context
-from aws_mcp.core.session import SessionManager, reset_session_manager
-from aws_mcp.execution.engine import reset_execution_engine
-from aws_mcp.safety.validator import SafetyEnforcer, reset_safety_enforcer
+from aws_sage.config import SafetyConfig, SafetyMode, ServerConfig, reset_config, set_config
+from aws_sage.core.context import ConversationContext, reset_context
+from aws_sage.core.session import SessionManager, reset_session_manager
+from aws_sage.execution.engine import reset_execution_engine
+from aws_sage.safety.validator import SafetyEnforcer, reset_safety_enforcer
 
 
 @pytest.fixture(autouse=True)

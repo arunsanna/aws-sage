@@ -1,17 +1,17 @@
 services:
-  aws-mcp:
+  aws-sage:
     build:
       context: .
       dockerfile: Dockerfile
-    image: aws-mcp-pro:latest
-    container_name: aws-mcp-pro
+    image: aws-sage:latest
+    container_name: aws-sage
     volumes:
       # Mount AWS credentials read-only for security
       - ~/.aws:/home/appuser/.aws:ro
     environment:
       - AWS_PROFILE=${AWS_PROFILE:-default}
       - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION:-us-east-1}
-      - AWS_MCP_SAFETY_MODE=${AWS_MCP_SAFETY_MODE:-read_only}
+      - AWS_SAGE_SAFETY_MODE=${AWS_SAGE_SAFETY_MODE:-read_only}
     stdin_open: true
     tty: true
     # Resource limits
@@ -22,7 +22,7 @@ services:
           cpus: '0.5'
     # Health check
     healthcheck:
-      test: ["CMD", "python", "-c", "import aws_mcp"]
+      test: ["CMD", "python", "-c", "import aws_sage"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -30,7 +30,7 @@ services:
   # LocalStack for local development
   localstack:
     image: localstack/localstack:latest
-    container_name: aws-mcp-localstack
+    container_name: aws-sage-localstack
     ports:
       - "4566:4566"
     environment:

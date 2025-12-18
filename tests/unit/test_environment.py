@@ -3,7 +3,7 @@
 import pytest
 from unittest.mock import patch, MagicMock
 
-from aws_mcp.core.environment import (
+from aws_sage.core.environment import (
     EnvironmentType,
     EnvironmentConfig,
     LOCALSTACK_COMMUNITY_SERVICES,
@@ -11,13 +11,13 @@ from aws_mcp.core.environment import (
     DEFAULT_PRODUCTION_CONFIG,
     DEFAULT_LOCALSTACK_CONFIG,
 )
-from aws_mcp.core.environment_manager import (
+from aws_sage.core.environment_manager import (
     EnvironmentManager,
     EnvironmentSwitchResult,
     get_environment_manager,
     reset_environment_manager,
 )
-from aws_mcp.differentiators.compare import (
+from aws_sage.differentiators.compare import (
     ResourceDifference,
     ResourceComparison,
     ComparisonResult,

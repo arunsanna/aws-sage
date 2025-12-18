@@ -1,13 +1,13 @@
-# AWS MCP Pro
+# AWS Sage
 
 A production-grade [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server for AWS that goes beyond basic API wrappers. Built for AI assistants like Claude to intelligently interact with AWS environments through natural language.
 
-## Why AWS MCP Pro?
+## Why AWS Sage?
 
-AWS Labs offers [15 separate MCP servers](https://github.com/awslabs/mcp) for different services. AWS MCP Pro takes a different approach:
+AWS Labs offers [15 separate MCP servers](https://github.com/awslabs/mcp) for different services. AWS Sage takes a different approach:
 
-| Feature | AWS Labs MCP | AWS MCP Pro |
-|---------|--------------|-------------|
+| Feature | AWS Labs MCP | AWS Sage |
+|---------|--------------|----------|
 | **Architecture** | 15 separate servers | 1 unified server |
 | **Tools** | ~45 tools across servers | **30 intelligent tools** |
 | **Cross-Service Queries** | No | Yes - discover resources across all services |
@@ -109,8 +109,8 @@ Work across AWS accounts:
 ### Install from Source
 
 ```bash
-git clone https://github.com/arunsanna/aws-mcp-pro
-cd aws-mcp-pro
+git clone https://github.com/arunsanna/aws-sage
+cd aws-sage
 pip install -e .
 ```
 
@@ -121,9 +121,9 @@ Add to `claude_desktop_config.json`:
 ```json
 {
   "mcpServers": {
-    "aws-mcp": {
+    "aws-sage": {
       "command": "/path/to/python",
-      "args": ["-m", "aws_mcp.server"],
+      "args": ["-m", "aws_sage.server"],
       "env": {
         "AWS_PROFILE": "default"
       }
@@ -139,13 +139,13 @@ For enhanced security with container isolation:
 ```json
 {
   "mcpServers": {
-    "aws-mcp": {
+    "aws-sage": {
       "command": "docker",
       "args": [
         "run", "-i", "--rm",
         "-v", "~/.aws:/home/appuser/.aws:ro",
         "-e", "AWS_PROFILE=default",
-        "aws-mcp-pro:latest"
+        "aws-sage:latest"
       ]
     }
   }
@@ -154,7 +154,7 @@ For enhanced security with container isolation:
 
 Build the Docker image:
 ```bash
-docker compose build aws-mcp
+docker compose build aws-sage
 ```
 
 ### LocalStack Development
@@ -224,7 +224,7 @@ Then switch to LocalStack in your Claude conversation:
 | `get_best_practices` | Get service-specific best practices |
 | `get_service_limits` | Show default service quotas |
 
-### Cost Analysis (NEW)
+### Cost Analysis
 
 | Tool | Description |
 |------|-------------|
@@ -233,7 +233,7 @@ Then switch to LocalStack in your Claude conversation:
 | `get_cost_breakdown` | Spending analysis by service/tag |
 | `project_costs` | Estimate costs before deployment |
 
-### Environment Management (NEW)
+### Environment Management
 
 | Tool | Description |
 |------|-------------|
@@ -243,7 +243,7 @@ Then switch to LocalStack in your Claude conversation:
 | `check_localstack` | Verify LocalStack connectivity |
 | `compare_environments` | Diff resources between environments |
 
-### Multi-Account Management (NEW)
+### Multi-Account Management
 
 | Tool | Description |
 |------|-------------|
@@ -323,11 +323,11 @@ Then switch to LocalStack in your Claude conversation:
 ## Architecture
 
 ```
-aws-mcp/
+aws-sage/
 ├── Dockerfile                  # Container support
 ├── docker-compose.yml          # LocalStack + MCP server
 │
-├── src/aws_mcp/
+├── src/aws_sage/
 │   ├── server.py              # FastMCP server (30 tools)
 │   ├── config.py              # Configuration & safety modes
 │   │
@@ -373,8 +373,8 @@ aws-mcp/
 ### Setup
 
 ```bash
-git clone https://github.com/arunsanna/aws-mcp-pro
-cd aws-mcp-pro
+git clone https://github.com/arunsanna/aws-sage
+cd aws-sage
 pip install -e ".[dev]"
 ```
 
@@ -385,7 +385,7 @@ pip install -e ".[dev]"
 pytest
 
 # With coverage
-pytest --cov=aws_mcp
+pytest --cov=aws_sage
 
 # Specific module
 pytest tests/unit/test_cost.py -v
@@ -396,22 +396,22 @@ pytest tests/unit/test_environment.py -v
 
 ```bash
 # Using FastMCP dev mode
-fastmcp dev src/aws_mcp/server.py
+fastmcp dev src/aws_sage/server.py
 
 # Or directly
-python -m aws_mcp.server
+python -m aws_sage.server
 ```
 
 ### Docker Development
 
 ```bash
 # Build and run
-docker compose build aws-mcp
-docker compose up aws-mcp
+docker compose build aws-sage
+docker compose up aws-sage
 
 # With LocalStack
 docker compose up -d localstack
-docker compose up aws-mcp
+docker compose up aws-sage
 ```
 
 ## Environment Variables
@@ -420,10 +420,10 @@ docker compose up aws-mcp
 |----------|-------------|---------|
 | `AWS_PROFILE` | AWS profile to use | `default` |
 | `AWS_DEFAULT_REGION` | Default AWS region | `us-east-1` |
-| `AWS_MCP_SAFETY_MODE` | Safety mode (read_only/standard/unrestricted) | `read_only` |
-| `AWS_MCP_LOCALSTACK_ENABLED` | Enable LocalStack by default | `false` |
-| `AWS_MCP_LOCALSTACK_HOST` | LocalStack host | `localhost` |
-| `AWS_MCP_LOCALSTACK_PORT` | LocalStack port | `4566` |
+| `AWS_SAGE_SAFETY_MODE` | Safety mode (read_only/standard/unrestricted) | `read_only` |
+| `AWS_SAGE_LOCALSTACK_ENABLED` | Enable LocalStack by default | `false` |
+| `AWS_SAGE_LOCALSTACK_HOST` | LocalStack host | `localhost` |
+| `AWS_SAGE_LOCALSTACK_PORT` | LocalStack port | `4566` |
 
 ## Troubleshooting
 
@@ -431,7 +431,7 @@ docker compose up aws-mcp
 
 ```bash
 # Claude Desktop logs
-tail -f ~/Library/Logs/Claude/mcp-server-aws-mcp.log
+tail -f ~/Library/Logs/Claude/mcp-server-aws-sage.log
 tail -f ~/Library/Logs/Claude/mcp.log
 ```
 
@@ -476,5 +476,5 @@ MIT License - see [LICENSE](./LICENSE) for details.
 
 ## Contact
 
-- GitHub Issues: [arunsanna/aws-mcp-pro](https://github.com/arunsanna/aws-mcp-pro/issues)
+- GitHub Issues: [arunsanna/aws-sage](https://github.com/arunsanna/aws-sage/issues)
 - Email: arun.sanna@outlook.com

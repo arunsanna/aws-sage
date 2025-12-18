@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "aws-mcp-pro"
+name = "aws-sage"
 version = "1.0.0"
 description = "Production-grade AWS MCP server with safety controls and cross-service intelligence"
 readme = "README.md"
@@ -12,7 +12,7 @@ requires-python = ">=3.11"
 authors = [
     { name = "Arun Sanna" }
 ]
-keywords = ["aws", "mcp", "claude", "ai", "infrastructure"]
+keywords = ["aws", "mcp", "claude", "ai", "infrastructure", "sage"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
@@ -44,15 +44,15 @@ dev = [
 ]
 
 [project.scripts]
-aws-mcp = "aws_mcp.server:main"
+aws-sage = "aws_sage.server:main"
 
 [project.urls]
-Homepage = "https://github.com/arunsanna/aws-mcp-pro"
-Documentation = "https://github.com/arunsanna/aws-mcp-pro#readme"
-Repository = "https://github.com/arunsanna/aws-mcp-pro"
+Homepage = "https://github.com/arunsanna/aws-sage"
+Documentation = "https://github.com/arunsanna/aws-sage#readme"
+Repository = "https://github.com/arunsanna/aws-sage"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/aws_mcp"]
+packages = ["src/aws_sage"]
 
 [tool.ruff]
 target-version = "py311"
@@ -72,7 +72,7 @@ ignore = [
 ]
 
 [tool.ruff.isort]
-known-first-party = ["aws_mcp"]
+known-first-party = ["aws_sage"]
 
 [tool.mypy]
 python_version = "3.11"
@@ -83,10 +83,10 @@ warn_unused_ignores = true
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
-addopts = "-v --cov=aws_mcp --cov-report=term-missing"
+addopts = "-v --cov=aws_sage --cov-report=term-missing"
 
 [tool.coverage.run]
-source = ["src/aws_mcp"]
+source = ["src/aws_sage"]
 branch = true
 
 [tool.coverage.report]
