@@ -1,6 +1,13 @@
 # AWS Sage
 
-A production-grade [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server for AWS that goes beyond basic API wrappers. Built for AI assistants like Claude to intelligently interact with AWS environments through natural language.
+[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/arunsanna/aws-sage/releases)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.11+-yellow.svg)](https://python.org)
+[![Tests](https://img.shields.io/badge/tests-145%20passing-brightgreen.svg)](tests/)
+
+A production-grade [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server for AWS. Connect Claude Desktop to your AWS infrastructure and manage it through natural conversation.
+
+**🚀 Works with Claude Desktop out of the box** - just install and configure.
 
 ## Why AWS Sage?
 
@@ -105,12 +112,14 @@ Work across AWS accounts:
 # 1. Clone and install
 git clone https://github.com/arunsanna/aws-sage
 cd aws-sage
-pip install -e .
+pip install .
 
-# 2. Add to Claude Desktop config (see location below)
+# 2. Add to Claude Desktop config (see Configuration below)
 # 3. Restart Claude Desktop
 # 4. Start chatting: "List my S3 buckets"
 ```
+
+That's it! Claude Desktop automatically runs AWS Sage when needed.
 
 ## Installation
 
@@ -119,15 +128,15 @@ pip install -e .
 - AWS credentials configured (`~/.aws/credentials` or `~/.aws/config`)
 - [Claude Desktop](https://claude.ai/download) or [Claude Code](https://docs.anthropic.com/en/docs/claude-code)
 
-### Option 1: Install from Source (Recommended)
+### Option 1: From Source
 
 ```bash
 git clone https://github.com/arunsanna/aws-sage
 cd aws-sage
-pip install -e .
+pip install .
 ```
 
-### Option 2: Install from GitHub
+### Option 2: Direct from GitHub
 
 ```bash
 pip install git+https://github.com/arunsanna/aws-sage.git
@@ -210,18 +219,6 @@ Windows:
     }
   }
 }
-```
-
-### LocalStack Development
-
-Start LocalStack for local development:
-```bash
-docker compose up -d localstack
-```
-
-Then switch to LocalStack in your Claude conversation:
-```
-"Switch to localstack environment"
 ```
 
 ## Tools Reference (30 Tools)
@@ -423,7 +420,7 @@ aws-sage/
     └── integration/           # Integration tests
 ```
 
-## Development
+## Development (For Contributors)
 
 ### Setup
 
@@ -436,37 +433,31 @@ pip install -e ".[dev]"
 ### Run Tests
 
 ```bash
-# All tests
-pytest
-
-# With coverage
-pytest --cov=aws_sage
-
-# Specific module
-pytest tests/unit/test_cost.py -v
-pytest tests/unit/test_environment.py -v
+pytest                          # All tests
+pytest --cov=aws_sage           # With coverage
+pytest tests/unit/test_cost.py  # Specific module
 ```
 
-### Run Server Locally
+### Local Testing with LocalStack
+
+Test against LocalStack without touching real AWS:
 
 ```bash
-# Using FastMCP dev mode
-fastmcp dev src/aws_sage/server.py
-
-# Or directly
-python -m aws_sage.server
-```
-
-### Docker Development
-
-```bash
-# Build and run
-docker compose build aws-sage
-docker compose up aws-sage
-
-# With LocalStack
+# Start LocalStack
 docker compose up -d localstack
-docker compose up aws-sage
+
+# In Claude Desktop, say:
+# "Switch to localstack environment"
+# "Create test bucket my-test-bucket"
+```
+
+### Debug Server Directly
+
+For development/debugging (not needed for normal use):
+
+```bash
+fastmcp dev src/aws_sage/server.py  # Interactive mode
+python -m aws_sage.server           # Direct run
 ```
 
 ## Environment Variables
@@ -513,13 +504,20 @@ tail -f ~/Library/Logs/Claude/mcp.log
 
 ## Roadmap
 
-- [x] LocalStack integration for local development
+**v1.0.0 (Current)**
+- [x] 30 intelligent tools across 10 categories
+- [x] Cross-service discovery, dependency mapping, impact analysis
 - [x] Cost optimization analyzer
+- [x] LocalStack integration
 - [x] Multi-account support
 - [x] Docker containerization
+- [x] 3-tier safety system with 70+ blocked operations
+
+**Future**
 - [ ] CloudFormation drift detection
 - [ ] Custom workflow definitions
 - [ ] Terraform state integration
+- [ ] Compliance scanning (CIS benchmarks)
 
 ## Contributing
 
