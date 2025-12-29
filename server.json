@@ -1,0 +1,24 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-07-09/server.schema.json",
+  "name": "io.github.arunsanna/aws-sage-mcp",
+  "description": "Production-grade MCP server for AWS with 30 intelligent tools, cross-service discovery, dependency mapping, cost analysis, and LocalStack support. One unified server that replaces AWS Labs' 15 separate servers.",
+  "version": "1.0.4",
+  "packages": [
+    {
+      "registry_type": "pypi",
+      "identifier": "aws-sage-mcp",
+      "version": "1.0.4"
+    }
+  ],
+  "homepage": "https://github.com/arunsanna/aws-sage-mcp",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/arunsanna/aws-sage-mcp"
+  },
+  "tags": ["aws", "cloud", "infrastructure", "cost-optimization", "localstack", "devops"],
+  "vendor": {
+    "name": "Arun Sanna",
+    "url": "https://arunsanna.com"
+  }
+}
